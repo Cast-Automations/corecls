@@ -419,6 +419,20 @@ const GROUP_ENDPOINTS = {
       }
     },
     howCopy: 'Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly'
+  },
+  mondayHistory: {
+    source: 'monday',
+    formatValue: formatMondayValue,
+    sourceCopy: (extractedAt) => {
+      try {
+        const d = new Date(extractedAt);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return `Monday Deal Tracker board, synced ${dateStr}`;
+      } catch {
+        return 'Monday Deal Tracker board';
+      }
+    },
+    howCopy: 'Pulled from the Monday Deal Tracker board via the GraphQL API'
   }
 };
 
@@ -561,7 +575,7 @@ const profileData = {
           key: "form13FFiler", label: "13F Filer", value: "Loading...",
           source: "Form ADV Part 1A Item 7 + $100M AUM threshold",
           how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
-          confidence: "medium",
+          confidence: "low",
           confidenceReason: "Boolean derived from disclosed 13F status.",
           feedsInto: "P&P manual (13F filing calendar), holdings disclosure procedures"
         },
@@ -569,9 +583,89 @@ const profileData = {
           key: "formNPXFiler", label: "N-PX Filer", value: "Loading...",
           source: "Form ADV Part 2A + proxy voting disclosure",
           how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
-          confidence: "medium",
+          confidence: "low",
           confidenceReason: "Compound field (files + votes), from Part 2A disclosure.",
           feedsInto: "P&P manual (proxy voting policies), N-PX filing calendar"
+        }
+      ]
+    },
+    {
+      id: "mondayHistory",
+      label: "Monday Deal Tracker",
+      confidence: "high",
+      subtitle: "Live, Monday.com",
+      fields: [
+        {
+          key: "referralSource", label: "Referral Source", value: "Loading...",
+          source: "Monday > Deal Tracker > Referral Source",
+          how: "Monday GraphQL API read (status column)",
+          confidence: "high",
+          confidenceReason: "Structured status column in Monday.",
+          feedsInto: "Consultant briefer, referral network mapping"
+        },
+        {
+          key: "stage", label: "Deal Stage", value: "Loading...",
+          source: "Monday > Deal Tracker > Stage",
+          how: "Monday GraphQL API read (status column)",
+          confidence: "high",
+          confidenceReason: "Structured status column in Monday.",
+          feedsInto: "Prospect status, engagement lifecycle"
+        },
+        {
+          key: "probability", label: "Probability", value: "Loading...",
+          source: "Monday > Deal Tracker > Probability",
+          how: "Monday GraphQL API read (status column)",
+          confidence: "high",
+          confidenceReason: "Structured status column in Monday.",
+          feedsInto: "Prospect prioritization"
+        },
+        {
+          key: "priorDealAmounts", label: "Prior Deal Amounts", value: "Loading...",
+          source: "Monday > Deal Tracker > Deal Value",
+          how: "Monday GraphQL API read (numbers column)",
+          confidence: "high",
+          confidenceReason: "Structured deal value in Monday.",
+          feedsInto: "Renewal conversations, upsell recognition"
+        },
+        {
+          key: "firstContactDate", label: "First Contact Date", value: "Loading...",
+          source: "Monday > Deal Tracker > Deal Creation date",
+          how: "Monday GraphQL API read (date column), used as a first-contact proxy",
+          confidence: "high",
+          confidenceReason: "Deal creation date used as a first-contact proxy.",
+          feedsInto: "Client tenure, historical context"
+        },
+        {
+          key: "mondayFirmType", label: "Type of Firm (Monday)", value: "Loading...",
+          source: "Monday > Deal Tracker > Type of Firm",
+          how: "Monday GraphQL API read (dropdown column)",
+          confidence: "high",
+          confidenceReason: "Structured dropdown in Monday. Compare with the ADV Firm Type field.",
+          feedsInto: "Cross-check with ADV firm type"
+        },
+        {
+          key: "mondayAUM", label: "AUM (Monday)", value: "Loading...",
+          source: "Monday > Deal Tracker > AUM",
+          how: "Monday GraphQL API read (text column)",
+          confidence: "high",
+          confidenceReason: "Manually maintained AUM in Monday. Compare with ADV Regulatory AUM.",
+          feedsInto: "Cross-check with ADV regulatory AUM"
+        },
+        {
+          key: "intakeChannel", label: "Intake Channel", value: "Loading...",
+          source: "HubSpot (not a Monday column)",
+          how: "Renders N/A until the HubSpot connector lands",
+          confidence: "low",
+          confidenceReason: "Not tracked on the Monday deal board; HubSpot-only.",
+          feedsInto: "Proposal draft, sales analytics"
+        },
+        {
+          key: "proposalType", label: "Proposal Type", value: "Loading...",
+          source: "HubSpot (not a Monday column)",
+          how: "Renders N/A until the HubSpot connector lands",
+          confidence: "low",
+          confidenceReason: "Not tracked on the Monday deal board; HubSpot-only.",
+          feedsInto: "Proposal draft"
         }
       ]
     },
@@ -760,6 +854,18 @@ function formatADVValue(key, value) {
   }
 }
 
+function formatMondayValue(key, value) {
+  if (value === null || value === undefined || value === '') return 'N/A';
+  switch (key) {
+    case 'firstContactDate':
+      try {
+        return new Date(value).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      } catch { return String(value); }
+    default:
+      return String(value);
+  }
+}
+
 /* ========================================================================
  * Live fetch for one source group
  * Generalizable, Sprint 1B swaps groupId to reuse for other sources.
@@ -788,7 +894,13 @@ async function loadGroupData(groupId) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     const src = data.sources && data.sources[config.source];
-    if (!src) throw new Error(`No ${config.source} data for CRD ${CRD}`);
+    if (!src) {
+      group._loading = false;
+      group._extractionStatus = null;
+      group.fields.forEach(f => { f._loading = false; f.value = config.formatValue(f.key, null); });
+      renderGroups();
+      return;
+    }
 
     group.fields.forEach(field => {
       const fieldData = src.fields && src.fields[field.key];
@@ -796,12 +908,14 @@ async function loadGroupData(groupId) {
       if (fieldData !== undefined && fieldData !== null) {
         const rawValue = (fieldData.value !== undefined) ? fieldData.value : fieldData;
         field.value = config.formatValue(field.key, rawValue);
-        if (fieldData.confidence) {
-          field.confidence = fieldData.confidence;
-          field.confidenceReason = 'Confidence assigned by extraction cleanup pass.';
+        if (rawValue != null) {
+          if (fieldData.confidence) {
+            field.confidence = fieldData.confidence;
+            field.confidenceReason = 'Confidence assigned by extraction cleanup pass.';
+          }
+          field.source = config.sourceCopy(src.extracted_at);
+          field.how = config.howCopy;
         }
-        field.source = config.sourceCopy(src.extracted_at);
-        field.how = config.howCopy;
       } else {
         field.value = 'Not extracted';
         field.confidence = 'low';
@@ -942,6 +1056,7 @@ renderProfileCard();
 renderGroups();
 document.addEventListener('DOMContentLoaded', () => {
   loadGroupData('advExtraction');
+  loadGroupData('mondayHistory');
 });
 </script>
 
