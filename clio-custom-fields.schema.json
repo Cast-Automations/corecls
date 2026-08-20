@@ -1,0 +1,148 @@
+{
+  "_meta": {
+    "schema": "CoreCompliance Clio Custom Fields",
+    "version": "0.1",
+    "date": "2026-08-20",
+    "sprint": "1B, Task 7 (schema prep only, no connector built)",
+    "purpose": "Maps Anna's Clio custom fields to profile field keys, types, conditionals, and target group so the Sprint 1C Clio connector build is fast.",
+    "source": "Anna's Clio custom fields email, 2026-08-13",
+    "target_profile_group": "clioFields",
+    "field_key_convention": "camelCase, matches the mondayHistory/advExtraction field keys on the v0.2 page",
+    "type_values": [
+      "enum",
+      "number",
+      "date",
+      "text",
+      "user_reference"
+    ],
+    "connector_pattern_1c": "n8n workflow -> POST /api/profile/write with source: clio -> renders in the Clio Custom Fields group. Same shape as the Monday and ADV connectors.",
+    "open_questions": [
+      "COUNT MISMATCH: the brief's prose says 22 custom fields, but its enumerated list yields 16 (Assigned Team Member #1/#2/#3 counted as three). The 6-field gap must be reconciled against Anna's 2026-08-13 email before the 1C connector build.",
+      "Contract Type: 8 enum options not specified; confirm the option set with Anna.",
+      "Preferred Method of Communication: enum option values TBD from Anna.",
+      "Initial Retainer Requested: confirm text vs number with Anna."
+    ]
+  },
+  "fields": [
+    {
+      "key": "contractType",
+      "clioLabel": "Contract Type",
+      "type": "enum",
+      "targetGroup": "clioFields",
+      "options": [],
+      "conditional": null,
+      "needs_confirmation": "8 enum option values not provided in the brief; confirm the option set with Anna"
+    },
+    {
+      "key": "packageHours",
+      "clioLabel": "Package Hours",
+      "type": "number",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "packageHoursUsed",
+      "clioLabel": "Package Hour Used",
+      "type": "number",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "hoursUsedAsOfDate",
+      "clioLabel": "Hours Used as of Date",
+      "type": "date",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "assignedTeamMember1",
+      "clioLabel": "Assigned Team Member #1",
+      "type": "user_reference",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "assignedTeamMember2",
+      "clioLabel": "Assigned Team Member #2",
+      "type": "user_reference",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "assignedTeamMember3",
+      "clioLabel": "Assigned Team Member #3",
+      "type": "user_reference",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "profitabilitySplit",
+      "clioLabel": "Profitability Split",
+      "type": "text",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "contractSignedDate",
+      "clioLabel": "Contract Signed Date",
+      "type": "date",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "packageExpirationDate",
+      "clioLabel": "Package Expiration Date",
+      "type": "date",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "preferredCommunication",
+      "clioLabel": "Preferred Method of Communication",
+      "type": "enum",
+      "targetGroup": "clioFields",
+      "options": [],
+      "conditional": null,
+      "needs_confirmation": "enum option values TBD from Anna"
+    },
+    {
+      "key": "occoInsuranceProvider",
+      "clioLabel": "OCCO Insurance Provider",
+      "type": "text",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "occoInsuranceExpiration",
+      "clioLabel": "OCCO Insurance Expiration",
+      "type": "date",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "importantNote",
+      "clioLabel": "Important Note",
+      "type": "text",
+      "targetGroup": "clioFields",
+      "conditional": null
+    },
+    {
+      "key": "initialRetainerRequested",
+      "clioLabel": "Initial Retainer Requested",
+      "type": "text",
+      "targetGroup": "clioFields",
+      "conditional": null,
+      "needs_confirmation": "verify text vs number with Anna"
+    },
+    {
+      "key": "closedReason",
+      "clioLabel": "Closed Reason",
+      "type": "text",
+      "targetGroup": "clioFields",
+      "conditional": {
+        "on": "matter_status",
+        "equals": "closed"
+      }
+    }
+  ]
+}
