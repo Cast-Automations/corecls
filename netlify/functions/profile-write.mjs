@@ -12,7 +12,7 @@ export default async (req) => {
   if (req.method === 'OPTIONS') return preflight();
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req, 'profile:write');
   if (!auth.ok) return json({ error: auth.message }, auth.status);
 
   let body;

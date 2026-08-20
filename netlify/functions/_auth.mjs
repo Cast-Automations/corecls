@@ -1,22 +1,41 @@
 // Shared auth guard for the profile Functions.
 //
-// Task 4 (this sprint): shared token from env PROFILE_TOKEN, sent by callers
-// in the x-cast-token header. Mirrors the Serve v0.1 token pattern so the
-// migration is testable end to end before JWT lands.
+// Task 5: signed JWT verification. Callers send `Authorization: Bearer <jwt>`.
+// Tokens are HS256, signed with JWT_SECRET (Netlify env only, never in the repo).
+// Claims: { scope: "profile:read" | "profile:write", iat, exp }.
+//   - browser read tokens: 1h, minted by /api/auth/token after a password check
+//   - service write token: 30d, minted locally by mint-service-token.mjs, pasted
+//     into the n8n Header Auth credential
 //
-// Task 5: replace the body of requireAuth with signed-JWT verification
-// (Authorization: Bearer <jwt>, scope check, exp check). This is the ONLY
-// file Task 5 needs to touch. Keep the { ok, status, message } shape stable
-// so profile-write.mjs and profile-read.mjs never change for auth.
+// This is the single auth seam. Endpoints call requireAuth(req, scope) and
+// never handle tokens directly.
+//
+// POC scope: no user accounts, no key rotation, no rate limiting. Tech debt for
+// a later production-auth workstream.
 
-export function requireAuth(req) {
-  const expected = process.env.PROFILE_TOKEN;
-  if (!expected) {
-    return { ok: false, status: 500, message: 'PROFILE_TOKEN not configured on the site' };
+import { jwtVerify } from 'jose';
+
+const encoder = new TextEncoder();
+
+export async function requireAuth(req, requiredScope) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    return { ok: false, status: 500, message: 'JWT_SECRET not configured on the site' };
   }
-  const token = req.headers.get('x-cast-token');
-  if (!token || token !== expected) {
-    return { ok: false, status: 401, message: 'Unauthorized' };
+
+  const header = req.headers.get('authorization') || '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    return { ok: false, status: 401, message: 'Missing bearer token' };
   }
-  return { ok: true };
+
+  try {
+    const { payload } = await jwtVerify(match[1], encoder.encode(secret));
+    if (requiredScope && payload.scope !== requiredScope) {
+      return { ok: false, status: 403, message: `Token scope "${payload.scope}" lacks "${requiredScope}"` };
+    }
+    return { ok: true, payload };
+  } catch {
+    return { ok: false, status: 401, message: 'Invalid or expired token' };
+  }
 }

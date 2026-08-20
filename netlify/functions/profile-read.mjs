@@ -21,7 +21,7 @@ export default async (req) => {
   if (req.method === 'OPTIONS') return preflight();
   if (req.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
 
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req, 'profile:read');
   if (!auth.ok) return json({ error: auth.message }, auth.status);
 
   const crd = new URL(req.url).searchParams.get('crd');

@@ -383,7 +383,22 @@
  * ======================================================================== */
 const CRD = '108998';
 const API_READ = '/api/profile/read';
-const PROFILE_TOKEN = '13e7b137c2687aef4b1436a200189d22';  // Task 5 replaces this with a password -> short-lived JWT flow
+const API_AUTH = '/api/auth/token';
+const SITE_PASSWORD = 'CORECLS2026!';  // POC: mints a 1h read-scoped JWT. Production replaces with real user auth.
+
+let _tokenCache = null;
+async function getReadToken() {
+  if (_tokenCache && _tokenCache.exp > Date.now() + 60000) return _tokenCache.token;
+  const res = await fetch(API_AUTH, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: SITE_PASSWORD })
+  });
+  if (!res.ok) throw new Error(`Auth failed: HTTP ${res.status}`);
+  const data = await res.json();
+  _tokenCache = { token: data.token, exp: Date.now() + (data.expiresIn || 3600) * 1000 };
+  return _tokenCache.token;
+}
 
 /* ========================================================================
  * GROUP_ENDPOINTS
@@ -766,8 +781,9 @@ async function loadGroupData(groupId) {
 
   try {
     const url = `${API_READ}?crd=${encodeURIComponent(CRD)}`;
+    const token = await getReadToken();
     const response = await fetch(url, {
-      headers: { 'x-cast-token': PROFILE_TOKEN }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
