@@ -1,0 +1,31 @@
+# Core Compliance Netlify config
+# Sprint 1A: public deploy, no password protection (all data is placeholder + public SEC)
+# Sprint 1B: enable password protection before real data lands
+
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Password protection stub for Sprint 1B
+# Uncomment and configure via Netlify UI (Site settings > Access & security > Visitor access)
+# before uploading real client data.
+#
+# [context.production.environment]
+#   NETLIFY_VISITOR_ACCESS = "password"
+
+# Redirect legacy /v01/ or /v02/ typos to canonical paths
+[[redirects]]
+  from = "/v01/*"
+  to = "/v0.1/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/v02/*"
+  to = "/v0.2/:splat"
+  status = 301

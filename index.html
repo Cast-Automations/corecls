@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Core Compliance, Client Profile POCs</title>
+<style>
+  :root {
+    --teal: #14b8a6;
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --hover: #f1f5f9;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 64px 32px;
+  }
+  .brand-bar {
+    height: 4px;
+    width: 60px;
+    background: var(--teal);
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+  .brand-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--teal);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 26px;
+    margin: 0 0 8px;
+    line-height: 1.25;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin-bottom: 40px;
+  }
+  .poc-card {
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.12s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .poc-card:hover {
+    border-color: var(--teal);
+    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.12);
+    transform: translateY(-1px);
+  }
+  .poc-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .poc-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .poc-version {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .poc-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-left: auto;
+  }
+  .badge-baseline { background: rgba(100, 116, 139, 0.12); color: #475569; }
+  .badge-live { background: rgba(20, 184, 166, 0.15); color: #0f766e; }
+  .poc-desc {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+  .poc-meta {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  footer {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-top: 48px;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand-bar"></div>
+  <div class="brand-label">Core Compliance</div>
+  <h1>Client Profile POCs</h1>
+  <div class="subtitle">Prototype artifacts for the Client Profile Data Model workstream.</div>
+
+  <a class="poc-card" href="/v0.1/">
+    <div class="poc-header">
+      <span class="poc-title">POC A, Client Profile</span>
+      <span class="poc-version">v0.1</span>
+      <span class="poc-badge badge-baseline">Sprint 0 baseline</span>
+    </div>
+    <div class="poc-desc">Original demo from Strategy Session 1. 25 fields across 5 source groups, all values hardcoded. Preserved untouched as the Sprint 0 reference artifact.</div>
+    <div class="poc-meta">Deerfield Capital Management, static demo</div>
+  </a>
+
+  <a class="poc-card" href="/v0.2/">
+    <div class="poc-header">
+      <span class="poc-title">POC A, Client Profile</span>
+      <span class="poc-version">v0.2</span>
+      <span class="poc-badge badge-live">Sprint 1A, live ADV</span>
+    </div>
+    <div class="poc-desc">ADV Extraction group loads live from adviserinfo.sec.gov via automated extraction. Includes SS1 field additions: Branch Offices, 13F Filer, N-PX Filer. All other groups remain hardcoded (Sprint 1B extends the fetch pattern).</div>
+    <div class="poc-meta">Deerfield Capital Management, live SEC extraction on page load</div>
+  </a>
+
+  <footer>Core Compliance × CAST Services · Sprint 1A, ADV Extraction Pipeline</footer>
+</div>
+</body>
+</html>
