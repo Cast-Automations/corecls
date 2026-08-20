@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Core Compliance, Client Profile Data Model, POC A v0.2</title>
+<style>
+  :root {
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --teal: #14b8a6;
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --hover: #f1f5f9;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .container {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 32px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px;
+    align-items: start;
+  }
+  /* Profile card */
+  .profile-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: sticky;
+    top: 32px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .brand-bar {
+    height: 4px;
+    background: var(--teal);
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+  .brand-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--teal);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .version-tag {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 6px;
+    letter-spacing: 0;
+  }
+  .profile-card h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+    line-height: 1.25;
+  }
+  .firm-meta {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .legend {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .legend-title {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  /* Pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .pill-green { background: rgba(16, 185, 129, 0.12); color: #047857; }
+  .pill-yellow { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+  .pill-red { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+  /* Source groups */
+  .source-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .intro {
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 0 4px 8px;
+  }
+  .intro strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .group {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .group-header:hover { background: var(--hover); }
+  .group.collapsed .group-header { border-bottom-color: transparent; }
+  .group-chevron {
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: transform 0.15s ease;
+    width: 12px;
+  }
+  .group.collapsed .group-chevron { transform: rotate(-90deg); }
+  .group-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .group-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex: 1;
+  }
+  .field-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  /* Freshness badge */
+  .group-freshness {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 3px 8px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+  .group-freshness.loading {
+    background: rgba(245, 158, 11, 0.10);
+    color: #b45309;
+  }
+  .group-freshness.error {
+    background: rgba(239, 68, 68, 0.10);
+    color: #b91c1c;
+  }
+  .group-freshness.live {
+    background: rgba(16, 185, 129, 0.10);
+    color: #047857;
+  }
+  .group-fields {
+    max-height: 3000px;
+    overflow: hidden;
+    transition: max-height 0.2s ease;
+  }
+  .group.collapsed .group-fields {
+    max-height: 0;
+  }
+  /* Field rows */
+  .field {
+    border-bottom: 1px solid var(--border);
+  }
+  .field:last-child { border-bottom: none; }
+  .field-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 20px;
+    gap: 16px;
+    padding: 12px 20px;
+    cursor: pointer;
+    align-items: center;
+  }
+  .field-row:hover { background: var(--hover); }
+  .field-label {
+    font-weight: 500;
+    color: var(--text);
+  }
+  .field-value {
+    color: var(--text-muted);
+    font-size: 13.5px;
+  }
+  .field-value.loading {
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.55;
+  }
+  .field-value.error {
+    color: #b91c1c;
+    font-style: italic;
+  }
+  .field-chevron {
+    color: var(--text-muted);
+    font-size: 10px;
+    transition: transform 0.15s ease;
+    text-align: center;
+  }
+  .field.open .field-chevron { transform: rotate(90deg); }
+  .field.open .field-row { background: var(--hover); }
+  .field-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease;
+    background: #fafbfc;
+  }
+  .field.open .field-detail {
+    max-height: 500px;
+    border-top: 1px solid var(--border);
+  }
+  .detail-inner {
+    padding: 16px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .detail-line {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .detail-key {
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding-top: 2px;
+  }
+  .detail-value {
+    color: var(--text);
+  }
+  .detail-value .pill { margin-right: 6px; }
+  /* Data provenance banner */
+  .provenance {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: rgba(245, 158, 11, 0.07);
+    border: 1px solid rgba(245, 158, 11, 0.28);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 4px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+  .provenance-icon {
+    color: #b45309;
+    font-weight: 700;
+    flex-shrink: 0;
+    line-height: 1.5;
+  }
+  .provenance strong { font-weight: 600; }
+  .provenance-body { flex: 1; }
+  /* Footer */
+  .footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 24px;
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- LEFT: Sticky profile card -->
+  <aside class="profile-card">
+    <div class="brand-bar"></div>
+    <div class="brand-label">Core Compliance <span class="version-tag">v0.2</span></div>
+    <h1 id="firm-name"></h1>
+    <div class="firm-meta" id="firm-meta"></div>
+
+    <div class="stats">
+      <div>
+        <div class="stat-label">Package</div>
+        <div class="stat-value" id="stat-package"></div>
+      </div>
+      <div>
+        <div class="stat-label">Quarterly Fee</div>
+        <div class="stat-value" id="stat-fee"></div>
+      </div>
+      <div>
+        <div class="stat-label">AUM</div>
+        <div class="stat-value" id="stat-aum"></div>
+      </div>
+      <div>
+        <div class="stat-label">Team</div>
+        <div class="stat-value" id="stat-team"></div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-title">Source Confidence</div>
+      <div class="legend-item"><span class="pill pill-green">High</span> Structured, exists today</div>
+      <div class="legend-item"><span class="pill pill-yellow">Medium</span> Structured, needs work</div>
+      <div class="legend-item"><span class="pill pill-red">Low</span> Unstructured today</div>
+    </div>
+  </aside>
+
+  <!-- RIGHT: Source groups -->
+  <main class="source-groups">
+    <div class="intro">
+      <strong>Client profile fields grouped by source.</strong> Click any field to see where the data lives today, how we would get it, our current confidence, and which downstream artifacts consume it. In this version, the <strong>ADV Extraction</strong> group loads live from the SEC via automated extraction.
+    </div>
+    <div class="provenance">
+      <span class="provenance-icon">&#9432;</span>
+      <div class="provenance-body">
+        <strong>Mixed data sources in this prototype.</strong> The <strong>ADV Extraction</strong> group is live public SEC data for <strong>Financial Trust Asset Management</strong> (CRD 108998). The other four groups are illustrative placeholder values, not a validated client record. Figures will not reconcile across groups, and that is expected at this stage. The purpose here is to demonstrate the extraction mechanism.
+      </div>
+    </div>
+    <div id="groups-root"></div>
+    <div class="footer">Core Compliance, Sprint 1B, POC A v0.2, Client Profile Data Model with Live ADV Extraction</div>
+  </main>
+
+</div>
+
+<script>
+/* ========================================================================
+ * CONFIG, replace before deploy
+ * ======================================================================== */
+const WEBHOOK_URL = 'https://castdev.app.n8n.cloud/webhook/adv/latest';
+const WEBHOOK_TOKEN = '13e7b137c2687aef4b1436a200189d22';  // matches Verify Token node in ADV Serve
+
+/* ========================================================================
+ * GROUP_ENDPOINTS
+ * Sprint 1A wires only advExtraction. Sprint 1B adds hubspotHistory,
+ * intakeNotes source, etc. Same shape, one entry per fetched group.
+ * ======================================================================== */
+const GROUP_ENDPOINTS = {
+  advExtraction: {
+    url: WEBHOOK_URL,
+    token: WEBHOOK_TOKEN,
+    firm: 'Financial Trust Asset Management',
+    formatValue: formatADVValue,
+    sourceCopy: (extractedAt) => {
+      try {
+        const d = new Date(extractedAt);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return `Form ADV on file with SEC, auto-extracted ${dateStr}`;
+      } catch {
+        return 'Form ADV on file with SEC, auto-extracted';
+      }
+    },
+    howCopy: 'Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly'
+  }
+};
+
+/* ========================================================================
+ * FINANCIAL TRUST CLIENT PROFILE DATA OBJECT
+ * Structure lifted from Sprint 0 with ADV group updated to match the
+ * extraction schema and SS1 field additions folded in.
+ * ======================================================================== */
+const profileData = {
+  profile: {
+    firmName: "Financial Trust Asset Management",
+    firmType: "RIA, SEC Registered",
+    package: "OCCO",
+    quarterlyFee: "$18,000",
+    aum: "$138M",
+    teamLead: "Diane Foster",
+    teamAssociate: "Marcus Webb",
+    team: "Diane F + Marcus W"
+  },
+  sourceGroups: [
+    {
+      id: "clioFields",
+      label: "Clio Custom Fields",
+      confidence: "high",
+      subtitle: "Structured, exists today",
+      fields: [
+        {
+          key: "aum", label: "AUM", value: "$138M",
+          source: "Clio > Custom Fields > AUM",
+          how: "Direct read from Clio API (already structured)",
+          confidence: "high",
+          confidenceReason: "Anna keeps this updated per DS2.",
+          feedsInto: "Proposal draft (package recommendation), P&P manual placeholder, annual review scope"
+        },
+        {
+          key: "firmType", label: "Firm Type", value: "RIA, SEC Registered",
+          source: "Clio > Custom Fields > Firm Type",
+          how: "Direct read from Clio API. Cross-check against ADV extraction.",
+          confidence: "high",
+          confidenceReason: "Set at intake, rarely changes after registration.",
+          feedsInto: "Proposal draft (template variant), P&P manual (regulatory framework), scope of services"
+        },
+        {
+          key: "dualClientStatus", label: "Dual Client Status", value: "No",
+          source: "Clio > Custom Fields > Dual Client Status",
+          how: "Direct read from Clio API",
+          confidence: "high",
+          confidenceReason: "Boolean flag, maintained at onboarding.",
+          feedsInto: "Consultant briefer, conflict-of-interest scope, dual client handling notes"
+        },
+        {
+          key: "complianceTechnology", label: "Compliance Technology", value: "RIA in a Box",
+          source: "Clio > Custom Fields > Compliance Technology",
+          how: "Direct read from Clio API",
+          confidence: "high",
+          confidenceReason: "Anna maintains this at engagement start.",
+          feedsInto: "Proposal draft (technology paragraph, add-on pricing suppression), handoff email"
+        },
+        {
+          key: "preferredCommunication", label: "Preferred Communication", value: "Email (primary), Phone (urgent)",
+          source: "Clio > Custom Fields > Preferred Communication",
+          how: "Manual entry in Clio during intake, updated ad-hoc",
+          confidence: "high",
+          confidenceReason: "Structured field, maintained by consultants.",
+          feedsInto: "Consultant briefer, day-to-day communication defaults"
+        }
+      ]
+    },
+    {
+      id: "advExtraction",
+      label: "ADV Extraction",
+      confidence: "medium",
+      subtitle: "Live, adviserinfo.sec.gov",
+      fields: [
+        {
+          key: "regulatoryAUM", label: "Regulatory AUM", value: "Loading...",
+          source: "Form ADV Part 1A Item 5.F",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Reported by firm on Form ADV, updated at annual filing.",
+          feedsInto: "Package recommendation cross-check with Clio AUM, regulatory scope validation"
+        },
+        {
+          key: "firmType", label: "Firm Type (SEC)", value: "Loading...",
+          source: "Form ADV Part 1A Item 2",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Extracted from public filing, cross-check with Clio firmType field.",
+          feedsInto: "Regulatory scope validation, P&P manual template selection"
+        },
+        {
+          key: "stateRegistration", label: "State Registration", value: "Loading...",
+          source: "Form ADV Part 1A Item 2",
+          how: "Derived from Item 2 registration basis; state-registered lists resolved from IAPD in a later workstream",
+          confidence: "medium",
+          confidenceReason: "SEC status derived directly from the filing; state-registered lists deferred to IAPD.",
+          feedsInto: "P&P manual (registration framework), state notice filing scope, examination jurisdiction"
+        },
+        {
+          key: "employeeCount", label: "Employee Count", value: "Loading...",
+          source: "Form ADV Part 1A Item 5.A",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Reported annually, stale between amendments.",
+          feedsInto: "Package sizing, training scope, P&P employee-related sections"
+        },
+        {
+          key: "controlPersons", label: "Control Persons", value: "Loading...",
+          source: "Form ADV Schedule A",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Names extracted from Schedule A, formatting varies by filer.",
+          feedsInto: "P&P manual (control persons section), examination readiness, signature routing"
+        },
+        {
+          key: "formPFFiler", label: "Form PF Filer", value: "Loading...",
+          source: "Form ADV Part 1A Item 7 + AUM thresholds",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Boolean, threshold-based. Reliable when input is clean.",
+          feedsInto: "P&P manual (Form PF sections), regulatory calendar"
+        },
+        {
+          key: "formADVLastFiled", label: "ADV Last Filed", value: "Loading...",
+          source: "Form ADV filing metadata",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Date parsed from IAPD summary page.",
+          feedsInto: "Annual review schedule, compliance calendar, examination readiness"
+        },
+        {
+          key: "branchOffices", label: "Branch Offices", value: "Loading...",
+          source: "Form ADV Schedule D",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Structured on Schedule D, formatting varies by filing.",
+          feedsInto: "P&P manual (branch office policies), state notice filing requirements"
+        },
+        {
+          key: "form13FFiler", label: "13F Filer", value: "Loading...",
+          source: "Form ADV Part 1A Item 7 + $100M AUM threshold",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Boolean derived from disclosed 13F status.",
+          feedsInto: "P&P manual (13F filing calendar), holdings disclosure procedures"
+        },
+        {
+          key: "formNPXFiler", label: "N-PX Filer", value: "Loading...",
+          source: "Form ADV Part 2A + proxy voting disclosure",
+          how: "Pulled from adviserinfo.sec.gov via automated extraction, refreshes quarterly",
+          confidence: "medium",
+          confidenceReason: "Compound field (files + votes), from Part 2A disclosure.",
+          feedsInto: "P&P manual (proxy voting policies), N-PX filing calendar"
+        }
+      ]
+    },
+    {
+      id: "hubspotHistory",
+      label: "HubSpot History",
+      confidence: "medium",
+      subtitle: "Structured, siloed today",
+      fields: [
+        {
+          key: "intakeChannel", label: "Intake Channel", value: "Referral, existing client",
+          source: "HubSpot > Contact > Original Source",
+          how: "HubSpot API read, mapped to structured channel taxonomy",
+          confidence: "medium",
+          confidenceReason: "Captured at lead creation, siloed in HubSpot today.",
+          feedsInto: "Proposal draft (opening line variant), sales analytics"
+        },
+        {
+          key: "firstContactDate", label: "First Contact Date", value: "October 2025",
+          source: "HubSpot > Contact > Create Date",
+          how: "HubSpot API read",
+          confidence: "medium",
+          confidenceReason: "Reliable, but siloed from Clio profile today.",
+          feedsInto: "Client tenure calc, historical context for new consultants"
+        },
+        {
+          key: "priorDealAmounts", label: "Prior Deal Amounts", value: "OCCO ($72K), signed Feb 2026",
+          source: "HubSpot > Deals associated with contact",
+          how: "HubSpot API read, aggregated across all deals",
+          confidence: "medium",
+          confidenceReason: "Structured in HubSpot, but not surfaced in Clio profile.",
+          feedsInto: "Consultant briefer, renewal conversations, upsell recognition"
+        },
+        {
+          key: "consultantAssignments", label: "Consultant Assignments", value: "Diane F (lead), Marcus W (associate) since Feb 2026",
+          source: "HubSpot > Deal > Deal Owner + custom fields",
+          how: "HubSpot API read + reconciliation with Clio matter assignments",
+          confidence: "medium",
+          confidenceReason: "Structured, but two systems of record disagree occasionally.",
+          feedsInto: "Handoff email, consultant briefer, team assignment paragraph in proposal"
+        },
+        {
+          key: "priorConsultants", label: "Prior Consultants", value: "None, first engagement",
+          source: "HubSpot > Deal history + activity log",
+          how: "HubSpot API read + activity log parsing",
+          confidence: "medium",
+          confidenceReason: "Derivable from HubSpot history but requires reconstruction.",
+          feedsInto: "Consultant briefer (relationship sensitivity), handoff email"
+        }
+      ]
+    },
+    {
+      id: "intakeNotes",
+      label: "Intake Notes",
+      confidence: "low",
+      subtitle: "Unstructured, needs capture form",
+      fields: [
+        {
+          key: "businessModel", label: "Business Model", value: "Financial planning and private wealth for HNW individuals and small businesses",
+          source: "Free-text notes in HubSpot and consultant memory",
+          how: "Structured intake form during sales call + LLM extraction from call transcript",
+          confidence: "low",
+          confidenceReason: "Lives in notes and consultant heads today, per DS2.",
+          feedsInto: "Proposal draft (opening context), P&P manual (client base description)"
+        },
+        {
+          key: "decisionFactors", label: "Decision Factors", value: "Wanted a named outsourced CCO ahead of next exam cycle",
+          source: "Consultant notes from intake calls",
+          how: "Structured intake form fields + LLM extraction from call notes",
+          confidence: "low",
+          confidenceReason: "Ad-hoc notes, no consistent capture pattern.",
+          feedsInto: "Proposal draft (package recommendation rationale, opening line customization)"
+        },
+        {
+          key: "priceSensitivity", label: "Price Sensitivity", value: "Medium",
+          source: "Consultant judgment from sales conversations",
+          how: "Structured intake form with fixed categories (low/medium/high)",
+          confidence: "low",
+          confidenceReason: "Subjective, uncaptured today.",
+          feedsInto: "Proposal draft (package tier suggestion), renewal strategy"
+        },
+        {
+          key: "growthPlans", label: "Growth Plans", value: "Consolidating advisory and insurance arms, no new registrations planned",
+          source: "Consultant notes from intake and check-ins",
+          how: "Intake form field + periodic consultant update prompt",
+          confidence: "low",
+          confidenceReason: "Volatile, needs consultant to actively update.",
+          feedsInto: "P&P manual (future scope planning), package upgrade conversations"
+        },
+        {
+          key: "referralSource", label: "Referral Source", value: "Referral from existing Core client",
+          source: "Consultant memory + partial HubSpot notes",
+          how: "Structured intake field + HubSpot custom property",
+          confidence: "low",
+          confidenceReason: "Sometimes noted, often not. Referral network relies on Michelle recall.",
+          feedsInto: "Consultant briefer, referral network mapping, thank-you outreach"
+        }
+      ]
+    },
+    {
+      id: "consultantKnowledge",
+      label: "Consultant Knowledge",
+      confidence: "low",
+      subtitle: "In consultant's head today",
+      fields: [
+        {
+          key: "complaintLog", label: "Complaint Log", value: "None on record",
+          source: "Consultant's memory + ad-hoc Clio notes (no structured field)",
+          how: "Add structured field to Clio + intake form for prior events",
+          confidence: "low",
+          confidenceReason: "Anna flagged this in DS2 as 'lives in our heads', a stressor.",
+          feedsInto: "Consultant handoff briefer, historical context for new consultants"
+        },
+        {
+          key: "consultantPreferences", label: "Consultant Preferences", value: "Prefers email summaries, brief calls",
+          source: "Consultant memory, occasional email thread reference",
+          how: "Structured preference fields in Clio, updated per-engagement",
+          confidence: "low",
+          confidenceReason: "Never captured systematically today.",
+          feedsInto: "Consultant briefer, scheduling defaults, client experience"
+        },
+        {
+          key: "relationshipNuances", label: "Relationship Nuances", value: "Majority partner is primary contact, delegates day-to-day to CFO",
+          source: "Consultant memory from client interactions",
+          how: "Free-text field in Clio + LLM summarization from call recordings (pending Michelle policy)",
+          confidence: "low",
+          confidenceReason: "Sensitive detail, lives with the consultant. Loss risk on handoff.",
+          feedsInto: "Consultant briefer, communication defaults, escalation routing"
+        },
+        {
+          key: "serviceHistory", label: "Service History", value: "New engagement, onboarding in progress",
+          source: "Consultant memory + HubSpot deal notes",
+          how: "Structured event log field + LLM extraction from deal notes",
+          confidence: "low",
+          confidenceReason: "Fragmented across systems, no single timeline today.",
+          feedsInto: "Proposal draft (prior conversation reference), consultant briefer, renewal talking points"
+        }
+      ]
+    }
+  ]
+};
+
+/* ========================================================================
+ * Value formatting per ADV field
+ * ======================================================================== */
+function formatADVValue(key, value) {
+  if (value === null || value === undefined) return 'Not extracted';
+  switch (key) {
+    case 'regulatoryAUM':
+      return String(value).replace(/\$\s+/, '$');
+    case 'firmType':
+      return String(value);
+    case 'stateRegistration':
+      if (Array.isArray(value)) return value.length ? value.join(', ') : 'None';
+      return String(value);
+    case 'employeeCount':
+      return String(value);
+    case 'controlPersons':
+      if (!Array.isArray(value) || value.length === 0) return 'None listed';
+      if (value.length <= 3) return value.join(', ');
+      return `${value.slice(0, 2).join(', ')}, +${value.length - 2} more`;
+    case 'formPFFiler':
+    case 'form13FFiler':
+      return value ? 'Yes' : 'No';
+    case 'formADVLastFiled':
+      try {
+        return new Date(value).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      } catch { return String(value); }
+    case 'branchOffices': {
+      if (!Array.isArray(value) || value.length === 0) return 'None';
+      // Schedule D returns all-caps city names, and state is null for non-US
+      // offices (e.g. London). Title-case for consistency, drop empty parts.
+      const titleCase = s => s
+        ? String(s).replace(/[^\s-]+/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase())
+        : '';
+      const fmt = o => [titleCase(o.city), titleCase(o.state)].filter(Boolean).join(', ');
+      const preview = value.slice(0, 2).map(fmt).filter(Boolean).join('; ');
+      return value.length <= 2 ? preview : `${preview}; +${value.length - 2} more`;
+    }
+    case 'formNPXFiler':
+      if (!value || typeof value !== 'object') return 'Not extracted';
+      if (!value.isFiler) return 'Does not file';
+      return value.votesProxies ? 'Files, votes proxies' : 'Files, does not vote proxies';
+    default:
+      return String(value);
+  }
+}
+
+/* ========================================================================
+ * Live fetch for one source group
+ * Generalizable, Sprint 1B swaps groupId to reuse for other sources.
+ * ======================================================================== */
+async function loadGroupData(groupId) {
+  const config = GROUP_ENDPOINTS[groupId];
+  if (!config) {
+    console.warn(`No endpoint configured for group ${groupId}`);
+    return;
+  }
+  const group = profileData.sourceGroups.find(g => g.id === groupId);
+  if (!group) return;
+
+  // Loading state
+  group._loading = true;
+  group._error = false;
+  group.fields.forEach(f => { f._loading = true; f._error = false; });
+  renderGroups();
+
+  try {
+    const url = `${config.url}?firm=${encodeURIComponent(config.firm)}`;
+    const response = await fetch(url, {
+      headers: { 'x-cast-token': config.token }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+
+    group.fields.forEach(field => {
+      const fieldData = data.fields && data.fields[field.key];
+      field._loading = false;
+      if (fieldData !== undefined && fieldData !== null) {
+        const rawValue = (fieldData.value !== undefined) ? fieldData.value : fieldData;
+        field.value = config.formatValue(field.key, rawValue);
+        if (fieldData.confidence) {
+          field.confidence = fieldData.confidence;
+          field.confidenceReason = 'Confidence assigned by extraction cleanup pass.';
+        }
+        field.source = config.sourceCopy(data.extracted_at);
+        field.how = config.howCopy;
+      } else {
+        field.value = 'Not extracted';
+        field.confidence = 'low';
+        field.confidenceReason = 'Field missing from extraction payload.';
+      }
+    });
+    group._loading = false;
+    group._lastUpdated = data.extracted_at;
+    group._extractionStatus = data.extraction_status || 'success';
+    renderGroups();
+  } catch (err) {
+    console.error(`Load failed for group ${groupId}:`, err);
+    group._loading = false;
+    group._error = true;
+    group.fields.forEach(f => {
+      f._loading = false;
+      f._error = true;
+      f.value = 'Extraction unavailable';
+    });
+    renderGroups();
+  }
+}
+
+/* ========================================================================
+ * Rendering
+ * ======================================================================== */
+const CONFIDENCE_TO_PILL = {
+  high: { class: "pill-green", label: "High confidence" },
+  medium: { class: "pill-yellow", label: "Medium confidence" },
+  low: { class: "pill-red", label: "Low confidence" }
+};
+
+function renderProfileCard() {
+  const p = profileData.profile;
+  document.getElementById("firm-name").textContent = p.firmName;
+  document.getElementById("firm-meta").textContent = p.firmType;
+  document.getElementById("stat-package").textContent = p.package;
+  document.getElementById("stat-fee").textContent = p.quarterlyFee;
+  document.getElementById("stat-aum").textContent = p.aum;
+  document.getElementById("stat-team").textContent = p.team;
+}
+
+function pillHTML(confidence, labelOverride) {
+  const c = CONFIDENCE_TO_PILL[confidence] || CONFIDENCE_TO_PILL.medium;
+  const label = labelOverride || c.label;
+  return `<span class="pill ${c.class}">${label}</span>`;
+}
+
+function freshnessBadge(group) {
+  if (group._loading) return `<span class="group-freshness loading">Fetching...</span>`;
+  if (group._error) return `<span class="group-freshness error">Extraction failed</span>`;
+  if (group._lastUpdated) {
+    try {
+      const d = new Date(group._lastUpdated);
+      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const statusPrefix = group._extractionStatus === 'partial' ? 'Partial ' : 'Live ';
+      return `<span class="group-freshness live">${statusPrefix}· ${dateStr} ${timeStr}</span>`;
+    } catch { return ''; }
+  }
+  return '';
+}
+
+function fieldValueClass(field) {
+  if (field._loading) return 'field-value loading';
+  if (field._error) return 'field-value error';
+  return 'field-value';
+}
+
+function renderGroups() {
+  const openFieldId = document.querySelector(".field.open")?.dataset.field;
+  const collapsedGroupIds = Array.from(document.querySelectorAll(".group.collapsed"))
+    .map(el => el.dataset.group);
+
+  const root = document.getElementById("groups-root");
+  root.innerHTML = profileData.sourceGroups.map(group => `
+    <section class="group ${collapsedGroupIds.includes(group.id) ? 'collapsed' : ''}" data-group="${group.id}">
+      <header class="group-header" onclick="toggleGroup('${group.id}')">
+        <span class="group-chevron">▼</span>
+        <h2 class="group-title">${group.label}</h2>
+        ${pillHTML(group.confidence)}
+        <span class="group-subtitle">${group.subtitle}</span>
+        ${freshnessBadge(group)}
+        <span class="field-count">${group.fields.length} fields</span>
+      </header>
+      <div class="group-fields">
+        ${group.fields.map(f => `
+          <div class="field ${openFieldId === group.id + '.' + f.key ? 'open' : ''}" data-field="${group.id}.${f.key}">
+            <div class="field-row" onclick="toggleField('${group.id}.${f.key}')">
+              <div class="field-label">${f.label}</div>
+              <div class="${fieldValueClass(f)}">${f.value}</div>
+              <div class="field-chevron">▸</div>
+            </div>
+            <div class="field-detail">
+              <div class="detail-inner">
+                <div class="detail-line">
+                  <div class="detail-key">Source</div>
+                  <div class="detail-value">${f.source}</div>
+                </div>
+                <div class="detail-line">
+                  <div class="detail-key">How we'd get it</div>
+                  <div class="detail-value">${f.how}</div>
+                </div>
+                <div class="detail-line">
+                  <div class="detail-key">Confidence</div>
+                  <div class="detail-value">${pillHTML(f.confidence, f.confidence.charAt(0).toUpperCase() + f.confidence.slice(1))} ${f.confidenceReason}</div>
+                </div>
+                <div class="detail-line">
+                  <div class="detail-key">Feeds into</div>
+                  <div class="detail-value">${f.feedsInto}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </section>
+  `).join("");
+}
+
+function toggleGroup(groupId) {
+  const el = document.querySelector(`.group[data-group="${groupId}"]`);
+  if (el) el.classList.toggle("collapsed");
+}
+
+function toggleField(fieldId) {
+  const target = document.querySelector(`.field[data-field="${fieldId}"]`);
+  if (!target) return;
+  const wasOpen = target.classList.contains("open");
+  document.querySelectorAll(".field.open").forEach(f => f.classList.remove("open"));
+  if (!wasOpen) target.classList.add("open");
+}
+
+/* ========================================================================
+ * Init
+ * ======================================================================== */
+renderProfileCard();
+renderGroups();
+document.addEventListener('DOMContentLoaded', () => {
+  loadGroupData('advExtraction');
+});
+</script>
+
+</body>
+</html>
